@@ -17,11 +17,24 @@ def create_vectorstore(chunks):
     vectorstore=FAISS.from_texts(chunks,embeddings)
     return vectorstore
 
-def answer_question(vectorstore,question):
-    llm=ChatGroq(api_key=os.getenv("GROQ_API_KEY"),model_name="llama-3.1-8b-instant")
-    retriever=vectorstore.as_retriever()
+def answer_question(vectorstore, question, history=[]):
+    llm = ChatGroq(api_key=os.getenv("GROQ_API_KEY"), model_name="llama-3.1-8b-instant")
+    retriever = vectorstore.as_retriever()
     docs = retriever.invoke(question)
     context = "\n".join([doc.page_content for doc in docs])
-    prompt = f"Answer the question based on the context below.\n\nContext: {context}\n\nQuestion: {question}"
+    
+    history_text = ""
+    for msg in history:
+        history_text += f"User: {msg['question']}\nAssistant: {msg['answer']}\n\n"
+    
+    prompt = f"""Answer the question based on the context below.
+    
+    Context: {context}
+
+    Previous conversation:
+    {history_text}
+
+    Current question: {question}"""
+    
     response = llm.invoke(prompt)
     return response.content

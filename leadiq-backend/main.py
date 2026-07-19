@@ -9,7 +9,8 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -22,6 +23,7 @@ class LoadRequest(BaseModel):
 class AskRequest(BaseModel):
     session_id: str
     question: str
+    history: list = []
 
 @app.post("/load")
 def load(request: LoadRequest):
@@ -37,5 +39,5 @@ def ask(request: AskRequest):
     vectorstore = sessions.get(request.session_id)
     if not vectorstore:
         return {"error": "Session not found. Please load a URL first."}
-    answer = answer_question(vectorstore, request.question)
+    answer = answer_question(vectorstore, request.question, request.history)
     return {"answer": answer}
